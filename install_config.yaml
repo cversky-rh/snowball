@@ -1,0 +1,28 @@
+# Sample for single-node (SNO) OpenShift
+
+apiVersion: v1
+baseDomain: <domain> # Add the cluster domain name.
+compute:
+- name: worker
+  replicas: 0    # Set the compute replicas to 0. This makes the control plane node schedulable.
+controlPlane:
+  name: master
+  replicas: 1    # Set the controlPlane replicas to 1. In conjunction with the previous compute setting, this setting ensures the cluster runs on a single node.
+metadata:
+  name: <name>   # Set the metadata name to the cluster name.
+networking:      # Set the networking details. OVN-Kubernetes is the only allowed network plugin type for single-node clusters.
+  clusterNetwork:
+  - cidr: 10.128.0.0/14
+    hostPrefix: 23
+  machineNetwork:
+  - cidr: 10.0.0.0/16     # Set the cidr value to match the subnet of the single-node OpenShift cluster.
+  networkType: OVNKubernetes
+  serviceNetwork:
+  - 172.30.0.0/16
+platform:
+  none: {}
+bootstrapInPlace:
+  installationDisk: /dev/disk/by-id/<disk_id>    # Set the path to the installation disk drive, for example, /dev/disk/by-id/wwn-0x64cd98f04fde100024684cf3034da5c2.
+pullSecret: '<pull_secret>'     # Copy the pull secret from the Red Hat OpenShift Cluster Manager and add the contents to this configuration setting.
+sshKey: |
+  <ssh_key>      # Add the public SSH key from the administration host to log in to the cluster after installation. Use "ssh-keygen -t rsa -b 2048" to generate it. Copy ~/.ssh/id_rsa.pub here.
