@@ -69,15 +69,27 @@ if [ "$export_cert" == "y" ]; then
     echo "Certificate exported to $export_filename"
 fi
 
-# Uncomment the section below as needed
-# Add snowcone certificate to the RHEL system trust store and update
-# NOTE: if accessing from Mac use the following procedure
-# Open KeyChain Access from the Applications/Utilities folder. Select "System". Drag and drop the certificate into Keychain Access and enter your admin password.
+# Add snowball certificate to the system trust store and update. Works for RHEL and MacOS platforms
 
-# sudo cp snowcone_cert.pem /etc/pki/ca-trust/source/anchors/snowcone_cert.pem
-# sudo chown root.root /etc/pki/ca-trust/source/anchors/snowcone_cert.pem
-# sudo chmod 0644 /etc/pki/ca-trust/source/anchors/snowcone_cert.pem
-# sudo restorecon -v /etc/pki/ca-trust/source/anchors/snowcone_cert.pem
-# sudo update-ca-trust
-# sudo update-ca-trust extract
+platform=$(uname)
 
+if [[ "$platform" == "Linux" ]]; then
+    if [[ -f /etc/redhat-release ]]; then
+        echo "Detected RHEL platform. Adding snowcone certificate to the RHEL system trust store."
+        sudo cp snowcone_cert.pem /etc/pki/ca-trust/source/anchors/snowcone_cert.pem
+        sudo chown root.root /etc/pki/ca-trust/source/anchors/snowcone_cert.pem
+        sudo chmod 0644 /etc/pki/ca-trust/source/anchors/snowcone_cert.pem
+        sudo restorecon -v /etc/pki/ca-trust/source/anchors/snowcone_cert.pem
+        sudo update-ca-trust
+        sudo update-ca-trust extract
+    else
+        echo "Detected Linux platform, but not RHEL. Please refer to the appropriate documentation for certificate installation."
+    fi
+elif [[ "$platform" == "Darwin" ]]; then
+    echo "Detected Mac platform. Please follow these steps to add the certificate to KeyChain Access:"
+    echo "1. Open KeyChain Access from the Applications/Utilities folder."
+    echo "2. Select 'System'."
+    echo "3. Drag and drop the certificate into Keychain Access and enter your admin password."
+else
+    echo "Unsupported platform detected. Please refer to the appropriate documentation for certificate installation."
+fi
