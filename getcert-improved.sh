@@ -28,6 +28,28 @@ Options:
 EOF
 }
 
+# Function to export certificate
+export_certificate() {
+  local arn=$1
+  local filename=$2
+  
+  if [ -f "$filename" ]; then
+    read -p "$filename already exists. Overwrite? (y/n) " confirm
+    if [ "$confirm" != "y" ]; then
+      return 1
+    fi
+  fi  
+
+  snowballEdge get-certificate --certificate-arn "$arn" "$localSBE" > "$filename"
+
+  if [ $? -eq 0 ]; then
+    echo "Certificate exported to $filename"
+  else
+    echo "Error exporting certificate"
+    return 1
+  fi
+}
+
 # Get arguments
 while getopts ":i:m:c:h" opt; do
   case $opt in
@@ -95,16 +117,18 @@ SBEcert=`snowballEdge list-certificates $localSBE | jq -r '.Certificates[0].Cert
 echo "SnowBall Certificate: $SBEcert"
 
 # Check if user wants to export certificate
-read -p "Do you want to export the certificate to a local file? (y/n): " export_cert
+read -p "Do you want to export the certificate to a local file? (y/n) " do_export
 
-if [ "$export_cert" == "y" ]; then
-    # Ask user for custom filename or use default
-    read -p "Enter the filename (or press Enter to use default '$DEFAULT_CERT_PEMFILE'): " custom_filename
-    export_filename=${custom_filename:-$DEFAULT_CERT_PEMFILE}
+if [ "$do_export" == "y" ]; then
 
-    # Export the snowball certificates to a local file
-    snowballEdge get-certificate --certificate-arn $SBEcert $localSBE > ./$export_filename
-    echo "Certificate exported to $export_filename"
+  read -p "Enter filename (or press Enter for default '$DEFAULT_CERT_PEMFILE'): " filename
+  
+  if [ -z "$filename" ]; then
+    filename=$DEFAULT_CERT_PEMFILE
+  fi
+
+  export_certificate "$SBEcert" "$filename"
+
 fi
 
 # Add snowball certificate to the system trust store and update. Works for RHEL and MacOS platforms
